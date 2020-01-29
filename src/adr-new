@@ -2,7 +2,7 @@
 set -e
 eval "$($(dirname $0)/adr-config)"
 
-## usage: adr new [-s SUPERSEDED] [-l TARGET:LINK:REVERSE-LINK] TITLE_TEXT...
+## usage: adr new [-n NUMBER] [-s SUPERSEDED] [-l TARGET:LINK:REVERSE-LINK] TITLE_TEXT...
 ##
 ## Creates a new, numbered ADR.  The TITLE_TEXT arguments are concatenated to
 ## form the title of the new ADR.  The ADR is opened for editing in the
@@ -18,6 +18,8 @@ eval "$($(dirname $0)/adr-config)"
 ##   http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions
 ##
 ## Options:
+##
+## -n NUMBER       Create the new ADR with a given number.
 ##
 ## -s SUPERSEDED   A reference (number or partial filename) of a previous
 ##                 decision that the new decision supersedes. A Markdown link
@@ -48,13 +50,26 @@ eval "$($(dirname $0)/adr-config)"
 ##
 ##     adr new -s 3 -s 4 -l "5:Amends:Amended by" Use Riak CRDTs to cope with scale
 ##
+## E.g. to create a new ADR with an explicit number:
+##
+##     adr new -n 42 User PostgreSQL Database
+##
 
 superseded=()
 links=()
+newnum=()
 
-while getopts s:l: arg
+while getopts n:s:l: arg
 do
     case "$arg" in
+        n)
+            if [ -n "$newnum" ];
+            then
+                echo "ERROR: multiple numbers given"
+                exit 1
+            fi
+            newnum="$OPTARG"
+            ;;
         s)
             superseded+=("$OPTARG")
             ;;
@@ -91,12 +106,25 @@ then
     exit 1
 fi
 
+if [ -z "$newnum" ]
+then
+    if [ -d $dstdir ]
+    then
+        maxid=$(ls $dstdir | grep -Eo '^[0-9]+' | sed -e 's/^0*//' | sort -rn | head -1)
+        newnum=$(($maxid + 1))
+    else
+        newnum=1
+    fi
+fi
+
 if [ -d $dstdir ]
 then
-    maxid=$(ls $dstdir | grep -Eo '^[0-9]+' | sed -e 's/^0*//' | sort -rn | head -1)
-    newnum=$(($maxid + 1))
-else
-    newnum=1
+    existingadr=$(ls $dstdir | grep -Eo '^0*'$newnum'\D' | sed -e 's/^0*//')
+    if [ -n "$existingadr" ]
+    then
+        echo "ERROR: ADR number $newnum already exists"
+        exit 1
+    fi
 fi
 
 newid=$(printf "%04d" $newnum)
