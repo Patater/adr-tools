@@ -10,7 +10,7 @@ check: $(TESTS:tests/%.sh=$(BUILDDIR)/tests/%.diff)
 	@echo SUCCESS
 
 $(BUILDDIR)/tests/%.diff: $(BUILDDIR)/tests/%.output tests/%.expected
-	@diff --side-by-side $^ > $@ || ! cat $@
+	@sdiff $^ > $@ || ! cat $@
 
 $(BUILDDIR)/tests/%.output: tests/%.sh tests/%.expected $(SRC)
 	@echo TEST: $*
