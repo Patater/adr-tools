@@ -25,7 +25,7 @@ $(BUILDDIR)/tests/%.output: tests/%.sh tests/%.expected $(SRC)
 	    /bin/sh -v $(abspath $<) > $(abspath $@) 2>&1) || ! cat $@
 
 clean:
-	rm -rf /tmp/adr-tools-build
+	rm -rf $(BUILDDIR)
 
 show-%:
 	@echo "$* ($(flavor $*)) = $($*)"
